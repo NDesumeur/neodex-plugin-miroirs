@@ -1,0 +1,19 @@
+{
+ "Miroirs": "Mirrors",
+ "MIROIRS": "MIRRORS",
+ "RECORDS": "RECORDS",
+ "RECOMMENCER": "RESTART",
+ "Clic sur un miroir pour le tourner · flèches et Entrée au clavier · H : indice · R : recommencer": "Click a mirror to turn it · arrows and Enter on the keyboard · H: hint · R: restart",
+ "Le canon tire un laser. Chaque miroir le renvoie à angle droit ; un clic le fait pivoter. Allume tous les cristaux en même temps pour finir le niveau. Les murs arrêtent le laser, les cristaux le laissent passer. Trois étoiles en peu de coups ; un indice remet un miroir dans le bon sens, mais le niveau ne vaut plus qu'une étoile.": "The cannon fires a laser. Each mirror bounces it at a right angle; a click turns it. Light every crystal at once to finish the level. Walls stop the laser, crystals let it through. Three stars for few moves; a hint fixes one mirror, but the level is then worth one star.",
+ "Niveau atteint": "Level reached",
+ "Étoiles": "Stars",
+ "Miroirs tournés": "Mirrors turned",
+ "Niveau ": "Level ",
+ " cristaux · ": " crystals · ",
+ " coups": " moves",
+ "TOUT BRILLE !": "ALL LIT UP!",
+ "Entrée : niveau suivant": "Enter: next level",
+ "Tu as fini les ": "You finished all ",
+ " niveaux !": " levels!",
+ "Ce plugin doit être approuvé par NeoDex pour s'ouvrir.": "This plugin must be approved by NeoDex to open."
+}
