@@ -1,0 +1,9 @@
+{
+  "pluginId": "neodex.miroirs",
+  "repo": "NDesumeur/neodex-plugin-miroirs",
+  "version": "1.0.0",
+  "sha256": "310bdb7b82b03fe861f677352c6824bad64838d6e2a48685429c49d910930a61",
+  "approvedAt": "2026-11-13T23:16:59.175Z",
+  "neobase": ">=4.0.0",
+  "signature": "QvZnKuW7PMWkNiVKQxs0q0g3sMcxGdpg9Kp6X5GOgstAFB21MwKDTzAcT9BsYczL3zgEOj9zAW4aL7df9DZVCQ=="
+}
