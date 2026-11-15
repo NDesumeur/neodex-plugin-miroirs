@@ -5,13 +5,16 @@ const HTML = `<div class="appWrap wide">
   <div class="gMain"><div class="gameBox"><canvas id="miCanvas" width="240" height="136" role="img" aria-label="Miroirs"></canvas></div>
     <div class="gSide">
       <div class="sysCard"><b>RECORDS</b><div class="gStats" id="miStats"></div></div>
-      <div class="row"><button class="btn main" id="miNew">RECOMMENCER</button><button class="btn" id="miPrev">◀</button><button class="btn" id="miNext">▶</button></div>
+      <div class="row"><button class="btn main" id="miNew">RECOMMENCER</button><button class="btn" id="miPrev">◀</button><button class="btn" id="miNext">▶</button><button class="btn" id="miFs">PLEIN ÉCRAN</button></div>
       <div class="hint">Le canon tire un laser. Chaque miroir le renvoie à angle droit ; un clic le fait pivoter. Allume tous les cristaux en même temps pour finir le niveau. Les murs arrêtent le laser, les cristaux le laissent passer. Trois étoiles en peu de coups ; un indice remet un miroir dans le bon sens, mais le niveau ne vaut plus qu'une étoile.</div>
+      <div class="hint">À partir du niveau 41 : les filtres de couleur teignent le laser, les cristaux de couleur ne s'allument qu'avec un laser de leur couleur (le cristal blanc prend toutes les couleurs), et à partir du niveau 45 le prisme sépare le laser en deux, à gauche et à droite.</div>
     </div></div>
 </div>`;
 const CSS = `.gMain{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
-.gameBox{display:grid;place-items:center;padding:10px;background:#05010b;flex:0 0 auto;position:relative}
-.gameBox canvas{height:min(72vh,560px);width:auto;aspect-ratio:240/136;image-rendering:pixelated;cursor:var(--cp,pointer);touch-action:none}
+.gameBox{display:grid;place-items:center;padding:10px;background:#05010b;flex:2 1 560px;min-width:min(100%,560px);position:relative}
+.gameBox canvas{width:min(100%,max(320px,calc((100vh - 190px) * 240 / 136)));height:auto;aspect-ratio:240/136;image-rendering:pixelated;cursor:var(--cp,pointer);touch-action:none}
+.gameBox:fullscreen{padding:0}
+.gameBox:fullscreen canvas{width:min(100vw,calc(100vh * 240 / 136))}
 .gSide{display:flex;flex-direction:column;gap:14px;flex:1;min-width:250px;max-width:420px}
 .gSide .sysCard{display:flex;flex-direction:column}
 .gStats{display:grid;grid-template-columns:1fr auto;gap:4px 14px}
@@ -327,27 +330,39 @@ export default async function (ctx) {
   pxSkin(view.querySelector('.appWrap'), { title: 'MIROIRS', T: theme('#ff5a7a', '#ffd0dc', '#c02a4a', '#2a0812', '#5ae0ff'),
     emblem: ['............', 'kk..........', 'kakkkkkk....', 'kk.....wk...', '......wbk...', '.....wbk....', '....kkk.....', '.....r......', '.....r......', '.....r...bb.', '.....rrrrbwb', '.........bb.'],
     icons: [[/^RECOMMENCER/, 'play'], [/^RECORDS/, 'crown']] });
-  const W = 240, H = 136, T = 16, MAXL = 60;
+  const W = 240, H = 136, T = 16, MAXL = 80, ADV = 41, PRISM = 45;
   const save = { level: 1, stars: {}, turns: 0, ...(await doc('records')) };
   const keep = () => folder.write('records', save).catch(() => {});
-  // une cellule : '' vide, '#' mur, 'c' cristal, '/' ou '\\' miroir
+  // une cellule : '' vide, '#' mur, 'c' cristal (toutes couleurs), '/' ou '\\' miroir ; niveaux avancés : 'R' 'G' 'B' filtre, 'r' 'g' 'b' cristal de couleur, 'p' prisme
+  const BEAM = { w: ['#ff5a9a', '#ffd0e4'], r: ['#ff2a2a', '#ffb0a0'], g: ['#2ae04a', '#c0ffb0'], b: ['#3a7aff', '#b8d8ff'] };
   const reflect = (m, [dx, dy]) => m === '/' ? [-dy, -dx] : [dy, dx];
   // le trajet du laser : les cellules traversées, les cristaux allumés
-  function trace(L, g = L.g) {
-    let x = L.ex, y = L.ey, d = L.ed; const seg = [[x - d[0] * .5, y - d[1] * .5]], lit = new Set(), seen = new Set();
-    for (let n = 0; n < 400; n++) {
-      if (x < 0 || y < 0 || x >= L.w || y >= L.h) { seg.push([x - d[0] * .5, y - d[1] * .5]); break; }
-      const c = g[y][x], k = x + ',' + y + ',' + d;
-      if (seen.has(k)) break; seen.add(k);
-      if (c === '#') { seg.push([x - d[0] * .5, y - d[1] * .5]); break; }
-      if (c === 'c') lit.add(x + ',' + y);
-      if (c === '/' || c === '\\') { seg.push([x, y]); d = reflect(c, d); }
-      x += d[0]; y += d[1];
+  function trace(L, g = L.g) {  // segs : les morceaux de laser, chacun avec sa couleur ; hits : les miroirs et prismes touchés (pour les étincelles)
+    const segs = [], lit = new Set(), seen = new Set(), hits = [], beams = [[L.ex, L.ey, L.ed, 'w', [L.ex - L.ed[0] * .5, L.ey - L.ed[1] * .5]]];
+    while (beams.length && segs.length < 60) {
+      let [x, y, d, col, s0] = beams.shift(), seg = [s0];
+      for (let n = 0; n < 400; n++) {
+        if (x < 0 || y < 0 || x >= L.w || y >= L.h) { seg.push([x - d[0] * .5, y - d[1] * .5]); break; }
+        const c = g[y][x], k = x + ',' + y + ',' + d + col;
+        if (seen.has(k)) { seg.push([x - d[0] * .5, y - d[1] * .5]); break; } seen.add(k);
+        if (c === '#') { seg.push([x - d[0] * .5, y - d[1] * .5]); break; }
+        if (c === 'c' || c === col && 'rgb'.includes(c)) lit.add(x + ',' + y);
+        if ('RGB'.includes(c) && c && c.toLowerCase() !== col) { seg.push([x, y]); segs.push({ pts: seg, col }); col = c.toLowerCase(); seg = [[x, y]]; }
+        if (c === '/' || c === '\\') { seg.push([x, y]); d = reflect(c, d); hits.push([x, y, col]); }
+        if (c === 'p') {  // le prisme : le laser repart à gauche et à droite, plus tout droit
+          seg.push([x, y]); hits.push([x, y, col]);
+          for (const nd of [[d[1], d[0]], [-d[1], -d[0]]]) beams.push([x + nd[0], y + nd[1], nd, col, [x, y]]);
+          break;
+        }
+        x += d[0]; y += d[1];
+      }
+      segs.push({ pts: seg, col });
     }
-    return { seg, lit, won: lit.size === L.crystals };
+    return { segs, lit, hits, won: lit.size === L.crystals };
   }
   // le niveau n : on fait marcher le laser avec des virages, on pose les cristaux sur son chemin, puis on mélange les miroirs
   function makeLevel(n) {
+    if (n >= ADV) return makeLevel2(n);
     const r = seeded(n * 104729 + 3), w = Math.min(12, 5 + Math.floor(n / 3)), h = Math.min(7, 4 + Math.floor(n / 6));
     const turns = Math.min(9, 2 + Math.floor(n / 3)), nCry = Math.min(5, 1 + Math.floor(n / 5));
     for (let tries = 0; tries < 400; tries++) {
@@ -378,6 +393,63 @@ export default async function (ctx) {
       const flip = c => c === '/' ? '\\' : '/';
       let wrong = 0; const play = L.sol.map(row => row.slice());
       mirrors.forEach(([mx, my], i) => { if (r() < .6 || i === mirrors.length - 1) { play[my][mx] = flip(play[my][mx]); wrong++; } });
+      L.g = play; L.min = wrong;
+      if (trace(L).won) continue;
+      return L;
+    }
+    return null;
+  }
+  // les niveaux avancés (41 et plus) : le même principe (on fait marcher le laser, on pose ce qu'il traverse), avec des filtres, des cristaux de couleur et un prisme
+  function walk(g, used, x, y, d, turns, r, w, h) {  // le laser avance en tournant parfois sur un miroir ; il s'arrête au bord ou sur une case déjà prise
+    let made = 0; const path = [], mirrors = [];
+    while (x >= 0 && y >= 0 && x < w && y < h && path.length < w * h) {
+      const k = x + ',' + y; if (g[y][x] !== '' || used.has(k)) break;
+      if (made < turns && path.length > 0 && r() < .45) {
+        const opts = [[d[1], d[0]], [-d[1], -d[0]]].filter(([dx, dy]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < w && ny < h && g[ny][nx] === '' && !used.has(nx + ',' + ny); });
+        if (opts.length) { const nd = opts[Math.floor(r() * opts.length)], rf = reflect('/', d), m = rf[0] === nd[0] && rf[1] === nd[1] ? '/' : '\\'; g[y][x] = m; mirrors.push([x, y, path.length]); made++; d = nd; used.add(k); x += d[0]; y += d[1]; continue; }
+      }
+      used.add(k); path.push([x, y, d]); x += d[0]; y += d[1];
+    }
+    return { path, mirrors, made };
+  }
+  function makeLevel2(n) {
+    const r = seeded(n * 7919 + 11), w = 12, h = 7, prism = n >= PRISM && n % 3 !== 0, nFil = n >= 55 ? 2 : 1, nCry = Math.min(6, 3 + Math.floor((n - ADV) / 10));
+    for (let tries = 0; tries < 600; tries++) {
+      const g = Array.from({ length: h }, () => Array(w).fill('')), used = new Set(), ey = Math.floor(r() * h);
+      const main = walk(g, used, 0, ey, [1, 0], prism ? 2 + Math.floor(r() * 2) : Math.min(8, 4 + Math.floor((n - ADV) / 6)), r, w, h);
+      if (main.made < 2 || main.path.length < 5) continue;
+      let branches = [main];
+      if (prism) {  // le prisme sur une case droite du chemin ; on oublie la suite, deux branches repartent sur les côtés
+        const cand = main.path.map((c, i) => [c, i]).filter(([[x, y, d], i]) => i >= 2 && i < main.path.length - 1 && [[d[1], d[0]], [-d[1], -d[0]]].every(([dx, dy]) => g[y + dy]?.[x + dx] === '' && !used.has((x + dx) + ',' + (y + dy))));
+        if (!cand.length) continue;
+        const [[px0, py0, pd], pi] = cand[Math.floor(r() * cand.length)];
+        for (const [x, y] of main.path.slice(pi + 1)) used.delete(x + ',' + y);
+        main.path = main.path.slice(0, pi);
+        for (const [mx, my, mi] of main.mirrors) if (mi > pi) { g[my][mx] = ''; used.delete(mx + ',' + my); }  // les miroirs d'après le prisme disparaissent avec la suite du chemin
+        main.mirrors = main.mirrors.filter(m => m[2] <= pi);
+        g[py0][px0] = 'p';
+        const b1 = walk(g, used, px0 + pd[1], py0 + pd[0], [pd[1], pd[0]], 1 + Math.floor(r() * 2), r, w, h), b2 = walk(g, used, px0 - pd[1], py0 - pd[0], [-pd[1], -pd[0]], 1 + Math.floor(r() * 2), r, w, h);
+        if (b1.path.length < 2 || b2.path.length < 2) continue;
+        branches = [main, b1, b2];
+      }
+      // les filtres : sur un chemin, une case ; tout ce qui suit prend leur couleur
+      const colOf = new Map(); let colAt = 'w';
+      const paint = (br, start) => { let col = start; for (const [x, y] of br.path) { if (g[y][x] !== '' && 'RGB'.includes(g[y][x])) col = g[y][x].toLowerCase(); colOf.set(x + ',' + y, col); } return col; };
+      for (let f = 0; f < nFil; f++) { const br = branches[f === 0 ? 0 : 1 + Math.floor(r() * (branches.length - 1))] || branches[0], i = 1 + Math.floor(r() * Math.max(1, br.path.length - 3)), [x, y] = br.path[i] || []; if (x !== undefined && g[y][x] === '') g[y][x] = 'RGB'[Math.floor(r() * 3)]; }
+      colAt = paint(branches[0], 'w'); for (const br of branches.slice(1)) paint(br, colAt);
+      // les cristaux : au bout de chaque chemin (il faut tout régler), puis ailleurs ; en couleur là où le laser est teint
+      const cells = branches.flatMap(br => br.path.slice(1)).filter(([x, y]) => g[y][x] === ''), cry = [];
+      for (const br of branches) { const e = br.path[br.path.length - 1]; if (e && g[e[1]][e[0]] === '') cry.push(e); }
+      while (cry.length < nCry && cells.length) { const c = cells.splice(Math.floor(r() * cells.length), 1)[0]; if (!cry.includes(c)) cry.push(c); }
+      for (const [x, y] of cry) { const col = colOf.get(x + ',' + y) || 'w'; g[y][x] = col !== 'w' && r() < .75 ? col : 'c'; }
+      if (!cry.some(([x, y]) => 'rgb'.includes(g[y][x]))) continue;  // au moins un cristal de couleur
+      const off = []; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (g[yy][xx] === '' && !used.has(xx + ',' + yy)) off.push([xx, yy]);
+      for (let i = 0; i < Math.min(off.length, 6); i++) { const [a, bb] = off.splice(Math.floor(r() * off.length), 1)[0]; g[bb][a] = '#'; }
+      for (let i = 0; i < Math.min(off.length, Math.floor(n / 4)); i++) { const [a, bb] = off.splice(Math.floor(r() * off.length), 1)[0]; g[bb][a] = r() < .5 ? '/' : '\\'; }
+      const L = { w, h, ex: 0, ey, ed: [1, 0], crystals: cry.length, sol: g.map(row => row.slice()) };
+      if (!trace(L, L.sol).won) continue;
+      const flip = c => c === '/' ? '\\' : '/', play = L.sol.map(row => row.slice()), mir = branches.flatMap(br => br.mirrors).filter(([x, y]) => '/\\'.includes(L.sol[y][x]));
+      let wrong = 0; mir.forEach(([mx, my], i) => { if (r() < .6 || i === mir.length - 1) { play[my][mx] = flip(play[my][mx]); wrong++; } });
       L.g = play; L.min = wrong;
       if (trace(L).won) continue;
       return L;
@@ -415,15 +487,26 @@ export default async function (ctx) {
     { const X = X0 - T, Y = Y0 + L.ey * T; px(g, '#3a3046', X + 2, Y + 3, 12, 10); px(g, '#62566e', X + 3, Y + 4, 10, 2); px(g, '#16121e', X + 10, Y + 6, 6, 4); px(g, '#ff5a7a', X + 14, Y + 7, 2, 2); }
     for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) { const c = L.g[y][x], X = X0 + x * T, Y = Y0 + y * T;
       if (c === '#') { px(g, '#4a3e5a', X + 1, Y + 1, T - 2, T - 2); px(g, '#62566e', X + 1, Y + 1, T - 2, 2); px(g, '#2a2236', X + 1, Y + 8, T - 2, 1); px(g, '#2a2236', X + 8, Y + 3, 1, 5); px(g, '#2a2236', X + 4, Y + 9, 1, 6); }
-      if (c === '/' || c === '\\') drawMirror(X, Y, c, st.beam.seg.some(([a, b]) => a === x && b === y));
+      if (c === '/' || c === '\\') drawMirror(X, Y, c, st.beam.hits.some(([a, b]) => a === x && b === y));
+      if ('RGB'.includes(c) && c) { const [c1, c2] = BEAM[c.toLowerCase()]; px(g, '#05010b', X + 2, Y + 1, 12, 14); px(g, '#8a7a5a', X + 3, Y + 2, 10, 12); px(g, c1, X + 4, Y + 3, 8, 10); px(g, c2, X + 5, Y + 4, 2, 6); px(g, c2, X + 8, Y + 9, 1, 2); }
+      if (c === 'p') { for (let i = 0; i < 11; i++) { const w2 = Math.floor(i / 2) * 2 + 1; px(g, '#05010b', X + 8 - (w2 >> 1) - 1, Y + 3 + i, w2 + 2, 1); px(g, ['#d8f0ff', '#b8e0ff', '#ffffff'][i % 3], X + 8 - (w2 >> 1), Y + 3 + i, w2, 1); } px(g, '#ff5a5a', X + 4, Y + 13, 3, 1); px(g, '#5aff6a', X + 7, Y + 13, 2, 1); px(g, '#5a8aff', X + 9, Y + 13, 3, 1); }
     }
     // le laser
-    const pulse = st.tick % 30 < 15, s = st.beam.seg;
-    for (let i = 1; i < s.length; i++) { const [a, b] = s[i - 1], [c, d] = s[i], x1 = X0 + a * T + 7, y1 = Y0 + b * T + 7, x2 = X0 + c * T + 7, y2 = Y0 + d * T + 7;
-      const lx = Math.min(x1, x2), ly = Math.min(y1, y2), lw = Math.abs(x2 - x1) + 2, lh = Math.abs(y2 - y1) + 2;
-      px(g, '#7a1a2e', lx - 1, ly - 1, lw + 2, lh + 2); px(g, pulse ? '#ff5a7a' : '#ff7a94', lx, ly, lw, lh); px(g, '#ffe0e8', lx, ly, lh > 2 ? 1 : lw, lh > 2 ? lh : 1); }
-    for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) if (L.g[y][x] === 'c') { const X = X0 + x * T, Y = Y0 + y * T, on = st.beam.lit.has(x + ',' + y), c1 = on ? '#5ae0ff' : '#2a5a6e', c2 = on ? '#d0f8ff' : '#3a7a8e';
-      if (on) { px(g, 'rgba(90,224,255,.25)', X + 1, Y + 1, T - 2, T - 2); }
+    const pulse = st.tick % 20 < 10;
+    for (const { pts: s, col } of st.beam.segs) { const [c1, c2] = BEAM[col];  // un halo, le rayon, un cœur blanc : plus lumineux qu'avant
+      for (let i = 1; i < s.length; i++) { const [a, b] = s[i - 1], [c, d] = s[i], x1 = X0 + a * T + 7, y1 = Y0 + b * T + 7, x2 = X0 + c * T + 7, y2 = Y0 + d * T + 7;
+        const lx = Math.min(x1, x2), ly = Math.min(y1, y2), lw = Math.abs(x2 - x1) + 2, lh = Math.abs(y2 - y1) + 2, vert = lh > lw;
+        g.globalAlpha = pulse ? .32 : .22; px(g, c1, lx - (vert ? 2 : 0), ly - (vert ? 0 : 2), lw + (vert ? 4 : 0), lh + (vert ? 0 : 4)); g.globalAlpha = 1;
+        px(g, c1, lx, ly, lw, lh); px(g, c2, lx + (vert ? 0 : 0), ly, vert ? 1 : lw, vert ? lh : 1); px(g, '#ffffff', vert ? lx + 1 : lx, vert ? ly : ly + 1, vert ? 1 : lw, vert ? lh : 1); } }
+    for (const [hx, hy, col] of st.beam.hits) {  // les étincelles : de petits éclats qui jaillissent du miroir touché
+      const X = X0 + hx * T + 7, Y = Y0 + hy * T + 7, [c1, c2] = BEAM[col];
+      for (let k = 0; k < 5; k++) { const ph = (st.tick + k * 7 + hx * 13 + hy * 5) % 18, a = (k * 2.4 + hx + hy * 3 + Math.floor((st.tick + k * 7) / 18) * 1.7) % (Math.PI * 2), dd = 2 + ph * .45;
+        if (ph < 12) px(g, ph < 4 ? '#ffffff' : ph < 8 ? c2 : c1, X + Math.cos(a) * dd, Y + Math.sin(a) * dd, 1, 1); }
+      if (pulse) { px(g, '#ffffff', X - 1, Y, 3, 1); px(g, '#ffffff', X, Y - 1, 1, 3); }
+    }
+    const CRY = { c: ['#5ae0ff', '#d0f8ff', '#2a5a6e', '#3a7a8e'], r: ['#ff4a4a', '#ffc0b0', '#6a1e1e', '#8a3a3a'], g: ['#4ae05a', '#c8ffc0', '#1e5a28', '#3a7a40'], b: ['#4a8aff', '#c0d8ff', '#1e2e6a', '#3a4a8a'] };
+    for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) if ('crgb'.includes(L.g[y][x]) && L.g[y][x]) { const X = X0 + x * T, Y = Y0 + y * T, on = st.beam.lit.has(x + ',' + y), K = CRY[L.g[y][x]], c1 = on ? K[0] : K[2], c2 = on ? K[1] : K[3];
+      if (on) { g.globalAlpha = .3; px(g, K[0], X + 1, Y + 1, T - 2, T - 2); g.globalAlpha = 1; }
       px(g, c1, X + 6, Y + 2, 4, 12); px(g, c1, X + 4, Y + 5, 8, 6); px(g, c2, X + 7, Y + 3, 1, 9); px(g, c2, X + 5, Y + 6, 1, 3); if (on && st.tick % 40 < 8) px(g, '#ffffff', X + 11, Y + 3, 1, 1); }
     if (st.mode === 'play') { const [cx, cy] = st.cur, X = X0 + cx * T, Y = Y0 + cy * T, c = st.tick % 30 < 20 ? '#ffd84a' : '#a08020';
       px(g, c, X, Y, 4, 1); px(g, c, X, Y, 1, 4); px(g, c, X + T - 4, Y, 4, 1); px(g, c, X + T - 1, Y, 1, 4); px(g, c, X, Y + T - 1, 4, 1); px(g, c, X, Y + T - 4, 1, 4); px(g, c, X + T - 4, Y + T - 1, 4, 1); px(g, c, X + T - 1, Y + T - 4, 1, 4); }
@@ -455,15 +538,24 @@ export default async function (ctx) {
   }
   $('miNew').onclick = () => { start(st.n); $('miNew').blur(); };
   $('miPrev').onclick = () => go(st.n - 1); $('miNext').onclick = () => go(st.n + 1);
+  $('miFs').onclick = () => { $('miFs').blur(); try { if (document.fullscreenElement) document.exitFullscreen(); else $('miCanvas').parentElement.requestFullscreen?.().catch(() => {}); } catch {} };
   padKeys({ 3: 'h', 4: 'r' });
-  {  // vérification : les 60 niveaux existent, ne sont pas gagnés d'avance, leur solution allume tout, et les indices finissent le niveau
+  {  // vérification : les 80 niveaux existent, ne sont pas gagnés d'avance, leur solution allume tout, et les indices finissent le niveau
     const bad = [], keepS = JSON.stringify(save); mute = true;
     for (let n = 1; n <= MAXL; n++) { const L = makeLevel(n); if (!L) { bad.push(n + ' : pas de niveau'); continue; } if (trace(L).won) bad.push(n + ' : déjà gagné'); if (!trace(L, L.sol).won) bad.push(n + ' : solution fausse'); }
     start(8); for (let i = 0; i < 40 && st.mode === 'play'; i++) hint();
     if (st.mode !== 'won') bad.push('les indices ne finissent pas le niveau');
+    start(50); for (let i = 0; i < 60 && st.mode === 'play'; i++) hint();
+    if (st.mode !== 'won') bad.push('les indices ne finissent pas le niveau 50');
+    const all = Array.from({ length: MAXL - ADV + 1 }, (_, i) => makeLevel(ADV + i)?.sol.flat().join('') || '');
+    if (!all.every(s => /[RGB]/.test(s) && /[rgb]/.test(s))) bad.push('filtres ou cristaux de couleur manquants');
+    if (all.filter(s => s.includes('p')).length < 15) bad.push('pas assez de prismes');
+    { const L = { w: 5, h: 3, ex: 0, ey: 1, ed: [1, 0], crystals: 2, g: [['', '', 'r', '', ''], ['', 'R', 'p', '', ''], ['', '', 'b', '', '']] };  // le prisme sépare, le filtre teint, le cristal bleu reste éteint au rouge
+      const t = trace(L); if (t.segs.length !== 4 || !t.lit.has('2,0') || t.lit.has('2,2')) bad.push('prisme ou couleurs'); }
     console.assert(!bad.length, 'miroirs', bad); view.dataset.selfcheck = bad.join(' | ') || 'ok';
     Object.keys(save).forEach(k => delete save[k]); Object.assign(save, JSON.parse(keepS)); mute = false;
   }
+  $('miCanvas').__mi = { st: () => st, start, hint, make: makeLevel };
   start(Math.min(save.level, MAXL));
   const STEP = 1000 / 60; let acc = 0, last = performance.now(), raf = 0;
   const frame = t => { if (!on()) { raf = 0; return; } raf = requestAnimationFrame(frame); acc += Math.min(200, t - last); last = t; while (acc >= STEP) { st.tick++; if (st.mode === 'won') st.dead++; acc -= STEP; } draw(); };
