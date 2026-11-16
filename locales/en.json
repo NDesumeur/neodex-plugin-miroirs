@@ -73,5 +73,10 @@
  "les indices ne finissent pas le niveau": "hints do not finish the level",
  "vérification interne :": "self-check:",
  "À partir du niveau 41 : les filtres de couleur teignent le laser, les cristaux de couleur ne s'allument qu'avec un laser de leur couleur (le cristal blanc prend toutes les couleurs), et à partir du niveau 45 le prisme sépare le laser en deux, à gauche et à droite.": "From level 41: colour filters tint the laser, coloured crystals only light up with a laser of their colour (the white crystal takes every colour), and from level 45 the prism splits the laser in two, left and right.",
- "Étoiles": "Stars"
+ "Étoiles": "Stars",
+ "RGB": "RGB",
+ "les indices ne finissent pas le niveau 50": "the hints do not finish level 50",
+ "filtres ou cristaux de couleur manquants": "filters or colour crystals missing",
+ "pas assez de prismes": "not enough prisms",
+ "prisme ou couleurs": "prism or colours"
 }
