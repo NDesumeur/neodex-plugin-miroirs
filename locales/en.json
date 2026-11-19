@@ -53,7 +53,6 @@
  "Niveau": "Level",
  "Niveau ": "Level ",
  "Niveau atteint": "Level reached",
- "Niveaux et étoiles.": "Levels and stars.",
  "Nt": "Nt",
  "Oa": "Oa",
  "Oc": "Oc",
@@ -78,5 +77,6 @@
  "les indices ne finissent pas le niveau 50": "the hints do not finish level 50",
  "filtres ou cristaux de couleur manquants": "filters or colour crystals missing",
  "pas assez de prismes": "not enough prisms",
- "prisme ou couleurs": "prism or colours"
+ "prisme ou couleurs": "prism or colours",
+ "Rien n'est synchronisé : tes records restent sur cet appareil.": "Nothing is synced: your records stay on this device."
 }
