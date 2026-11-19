@@ -1,9 +1,9 @@
 {
   "pluginId": "neodex.miroirs",
   "repo": "NDesumeur/neodex-plugin-miroirs",
-  "version": "1.1.0",
-  "sha256": "6ca45e1702f35efc3d2f483ece427eb04132cd988a68b5ba61f0c67cd5154ca5",
-  "approvedAt": "2026-11-16T04:14:37.222Z",
+  "version": "1.1.1",
+  "sha256": "f97ad800172f1628260b17d4723f7288a5056ae0f9da8e015fc63205d0a280de",
+  "approvedAt": "2026-11-19T23:26:40.513Z",
   "neobase": ">=4.0.0",
-  "signature": "tW6aF6uQP4fZ+yqmZWyDjiog/+cOcVWiqOVBtpoFttQF/YT7vqnwT/6uAengwFjVB/pBtIAR45g14EMyfOuCAw=="
+  "signature": "zdlLEDWBWgM4dkVOUhDibJqYy5yfNnktUYXwwnOoOv5B43Jarpyc4Zjjjnd0UoGOFoUvNnZwM9BNIH2mdXjIBw=="
 }
