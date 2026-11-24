@@ -49,7 +49,6 @@
  "MIROIRS": "MIRRORS",
  "Miroirs": "Mirrors",
  "Miroirs tournés": "Mirrors turned",
- "Miroirs, un casse-tête en pixel art : tourne les miroirs pour guider le laser jusqu'à tous les cristaux. 80 niveaux construits à partir du trajet du laser, donc toujours faisables, avec des murs et des miroirs pièges ; à partir du niveau 41, des filtres de couleur, des cristaux de couleur et un prisme qui sépare le laser en deux. Laser lumineux avec étincelles sur les miroirs. Étoiles pour les niveaux faits en peu de coups, indices si tu bloques. Souris, clavier ou manette, plein écran.": "Mirrors, a pixel-art puzzle: turn the mirrors to guide the laser to every crystal. 80 levels built from the laser's path, so always solvable, with walls and decoy mirrors; from level 41, colour filters, coloured crystals and a prism that splits the laser in two. A bright laser with sparks on the mirrors. Stars for levels done in few moves, hints if you get stuck. Mouse, keyboard or gamepad, full screen.",
  "Niveau": "Level",
  "Niveau ": "Level ",
  "Niveau atteint": "Level reached",
@@ -78,5 +77,13 @@
  "filtres ou cristaux de couleur manquants": "filters or colour crystals missing",
  "pas assez de prismes": "not enough prisms",
  "prisme ou couleurs": "prism or colours",
- "Rien n'est synchronisé : tes records restent sur cet appareil.": "Nothing is synced: your records stay on this device."
+ "Rien n'est synchronisé : tes records restent sur cet appareil.": "Nothing is synced: your records stay on this device.",
+ "NIVEAU DU JOUR": "DAILY LEVEL",
+ "Niveau du jour": "Daily level",
+ "niveau du jour": "daily level",
+ "à faire": "to do",
+ "fait ✓": "done ✓",
+ "Série de jours": "Day streak",
+ "record": "best",
+ "Miroirs, un casse-tête en pixel art : tourne les miroirs pour guider le laser jusqu'à tous les cristaux. 80 niveaux construits à partir du trajet du laser, donc toujours faisables, avec des murs et des miroirs pièges ; à partir du niveau 41, des filtres de couleur, des cristaux de couleur et un prisme qui sépare le laser en deux. Laser lumineux avec étincelles sur les miroirs. Étoiles pour les niveaux faits en peu de coups, indices si tu bloques. Souris, clavier ou manette, plein écran. Un niveau du jour avec prisme, le même pour tous, et une série de jours.": "Mirrors, a pixel-art puzzle: turn the mirrors to guide the laser to every crystal. 80 levels built from the laser's path, so always solvable, with walls and decoy mirrors; from level 41, colour filters, coloured crystals and a prism that splits the laser in two. A bright laser with sparks on the mirrors. Stars for levels done in few moves, hints if you get stuck. Mouse, keyboard or gamepad, full screen. A daily level with a prism, the same for everyone, and a day streak."
 }

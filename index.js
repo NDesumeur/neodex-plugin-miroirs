@@ -6,6 +6,7 @@ const HTML = `<div class="appWrap wide">
     <div class="gSide">
       <div class="sysCard"><b>RECORDS</b><div class="gStats" id="miStats"></div></div>
       <div class="row"><button class="btn main" id="miNew">RECOMMENCER</button><button class="btn" id="miPrev">◀</button><button class="btn" id="miNext">▶</button><button class="btn" id="miFs">PLEIN ÉCRAN</button></div>
+      <div class="row"><button class="btn" id="miDaily">NIVEAU DU JOUR</button></div>
       <div class="hint">Le canon tire un laser. Chaque miroir le renvoie à angle droit ; un clic le fait pivoter. Allume tous les cristaux en même temps pour finir le niveau. Les murs arrêtent le laser, les cristaux le laissent passer. Trois étoiles en peu de coups ; un indice remet un miroir dans le bon sens, mais le niveau ne vaut plus qu'une étoile.</div>
       <div class="hint">À partir du niveau 41 : les filtres de couleur teignent le laser, les cristaux de couleur ne s'allument qu'avec un laser de leur couleur (le cristal blanc prend toutes les couleurs), et à partir du niveau 45 le prisme sépare le laser en deux, à gauche et à droite.</div>
     </div></div>
@@ -412,8 +413,8 @@ export default async function (ctx) {
     }
     return { path, mirrors, made };
   }
-  function makeLevel2(n) {
-    const r = seeded(n * 7919 + 11), w = 12, h = 7, prism = n >= PRISM && n % 3 !== 0, nFil = n >= 55 ? 2 : 1, nCry = Math.min(6, 3 + Math.floor((n - ADV) / 10));
+  function makeLevel2(n, seed) {
+    const r = seeded(seed ?? n * 7919 + 11), w = 12, h = 7, prism = n >= PRISM && n % 3 !== 0, nFil = n >= 55 ? 2 : 1, nCry = Math.min(6, 3 + Math.floor((n - ADV) / 10));
     for (let tries = 0; tries < 600; tries++) {
       const g = Array.from({ length: h }, () => Array(w).fill('')), used = new Set(), ey = Math.floor(r() * h);
       const main = walk(g, used, 0, ey, [1, 0], prism ? 2 + Math.floor(r() * 2) : Math.min(8, 4 + Math.floor((n - ADV) / 6)), r, w, h);
@@ -457,7 +458,10 @@ export default async function (ctx) {
     return null;
   }
   let g = null, st = null;
-  const start = n => { const L = makeLevel(n); st = { n, L, cur: [0, L.ey], turns: 0, hint: false, mode: 'play', tick: 0, dead: 0, beam: trace(L) }; info(); };
+  // le niveau du jour : un niveau avec prisme et couleurs, tiré d'après la date (le même pour tout le monde), et une série de jours
+  const day = (k = 0) => { const d = new Date(Date.now() - k * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  save.daily ??= { last: '', streak: 0, best: 0 };
+  const start = (n, daily = false) => { const L = (daily && makeLevel2(50, +day().replace(/-/g, ''))) || makeLevel(n); st = { n, L, cur: [0, L.ey], turns: 0, hint: false, mode: 'play', tick: 0, dead: 0, beam: trace(L), daily }; info(); };
   const ox = () => Math.floor((W - st.L.w * T) / 2) + 6, oy = () => 18 + Math.floor((H - 18 - st.L.h * T) / 2);
   function turn(x, y) {
     if (st.mode !== 'play') return; const c = st.L.g[y]?.[x];
@@ -467,7 +471,8 @@ export default async function (ctx) {
   }
   function win() {
     st.mode = 'won'; st.dead = 0; const s = st.hint ? 1 : st.turns <= st.L.min + 2 ? 3 : st.turns <= st.L.min + 6 ? 2 : 1; st.stars = s;
-    if (s > (save.stars[st.n] || 0)) save.stars[st.n] = s; if (st.n === save.level && st.n < MAXL) save.level = st.n + 1;
+    if (st.daily) { const d = save.daily; if (d.last !== day()) { d.streak = d.last === day(1) ? d.streak + 1 : 1; d.best = Math.max(d.best, d.streak); d.last = day(); } }
+    else { if (s > (save.stars[st.n] || 0)) save.stars[st.n] = s; if (st.n === save.level && st.n < MAXL) save.level = st.n + 1; }
     keep(); info(); [784, 988, 1175, 1568].forEach((f, i) => beep(f, .14, 'square', 0, .03, i * .08));
   }
   function hint() {  // remet dans le bon sens un miroir du chemin qui ne l'est pas
@@ -511,32 +516,33 @@ export default async function (ctx) {
     if (st.mode === 'play') { const [cx, cy] = st.cur, X = X0 + cx * T, Y = Y0 + cy * T, c = st.tick % 30 < 20 ? '#ffd84a' : '#a08020';
       px(g, c, X, Y, 4, 1); px(g, c, X, Y, 1, 4); px(g, c, X + T - 4, Y, 4, 1); px(g, c, X + T - 1, Y, 1, 4); px(g, c, X, Y + T - 1, 4, 1); px(g, c, X, Y + T - 4, 1, 4); px(g, c, X + T - 4, Y + T - 1, 4, 1); px(g, c, X + T - 1, Y + T - 4, 1, 4); }
     px(g, '#0a0610', 0, 0, W, 14);
-    pxFont(g, 'Niveau ' + st.n, 4, 11, '#ffffff');
+    pxFont(g, st.daily ? 'Niveau du jour' : 'Niveau ' + st.n, 4, 11, st.daily ? '#ffd84a' : '#ffffff');
     pxFont(g, st.beam.lit.size + ' / ' + L.crystals + ' cristaux · ' + st.turns + ' coups', W - 4, 11, '#5ae0ff', 8, 'right');
     if (st.mode === 'won' && st.dead > 20) gameText(g, W, [['TOUT BRILLE !', '#7ae05a', 12], ['★'.repeat(st.stars) + '☆'.repeat(3 - st.stars), '#ffd84a', 12], [st.turns + ' coups', '#ffffff'], [st.dead > 40 ? (st.n < MAXL ? 'Entrée : niveau suivant' : 'Tu as fini les ' + MAXL + ' niveaux !') : '', '#b8b0c8']], 48);
     if (st.tick % 15 === 0) g.canvas.setAttribute('aria-label', 'Miroirs, niveau ' + st.n + ' : ' + st.beam.lit.size + ' cristaux allumés sur ' + L.crystals + ', ' + st.turns + ' coups, case ' + (st.cur[0] + 1) + ', ' + (st.cur[1] + 1) + (st.mode === 'won' ? ', niveau fini' : '') + '.');
   }
   function info() {
     const stars = Object.values(save.stars).reduce((a, b) => a + b, 0);
-    $('miStats').replaceChildren(...[['Niveau atteint', save.level], ['Étoiles', stars + ' / ' + MAXL * 3], ['Miroirs tournés', save.turns]].flatMap(([a, c]) => [el('span', '', a), el('b', '', String(c))]));
+    $('miStats').replaceChildren(...[['Niveau atteint', save.level], ['Étoiles', stars + ' / ' + MAXL * 3], ['Miroirs tournés', save.turns], ['Niveau du jour', save.daily.last === day() ? 'fait ✓' : 'à faire'], ['Série de jours', (save.daily.last === day() || save.daily.last === day(1) ? save.daily.streak : 0) + ' (record ' + save.daily.best + ')']].flatMap(([a, c]) => [el('span', '', a), el('b', '', String(c))]));
   }
   const go = n => { if (n >= 1 && n <= Math.min(save.level, MAXL)) start(n); };
   document.addEventListener('keydown', e => {
     if (!on() || !st || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
     const k = e.key;
-    if (st.mode === 'won') { if ((k === 'Enter' || k === ' ') && st.dead > 40) { e.preventDefault(); go(Math.min(MAXL, st.n + 1)); } return; }
+    if (st.mode === 'won') { if ((k === 'Enter' || k === ' ') && st.dead > 40) { e.preventDefault(); st.daily ? start(Math.min(save.level, MAXL)) : go(Math.min(MAXL, st.n + 1)); } return; }
     const mv = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
     if (mv) { e.preventDefault(); st.cur = [Math.max(0, Math.min(st.L.w - 1, st.cur[0] + mv[0])), Math.max(0, Math.min(st.L.h - 1, st.cur[1] + mv[1]))]; return; }
     if (k === 'Enter' || k === ' ') { e.preventDefault(); turn(...st.cur); return; }
-    if (k === 'r' || k === 'R') { start(st.n); return; }
+    if (k === 'r' || k === 'R') { start(st.n, st.daily); return; }
     if (k === 'h' || k === 'H') hint();
   });
   { const cv = $('miCanvas');
     const cell = e => { const b = cv.getBoundingClientRect(), x = Math.floor(((e.clientX - b.left) / b.width * W - ox()) / T), y = Math.floor(((e.clientY - b.top) / b.height * H - oy()) / T); return x >= 0 && y >= 0 && x < st.L.w && y < st.L.h ? [x, y] : null; };
     cv.onpointermove = e => { if (st?.mode === 'play') { const c = cell(e); if (c) st.cur = c; } };
-    cv.onpointerdown = e => { e.preventDefault(); if (!st) return; if (st.mode === 'won') { if (st.dead > 40) go(Math.min(MAXL, st.n + 1)); return; } const c = cell(e); if (c) { st.cur = c; turn(...c); } };
+    cv.onpointerdown = e => { e.preventDefault(); if (!st) return; if (st.mode === 'won') { if (st.dead > 40) st.daily ? start(Math.min(save.level, MAXL)) : go(Math.min(MAXL, st.n + 1)); return; } const c = cell(e); if (c) { st.cur = c; turn(...c); } };
   }
-  $('miNew').onclick = () => { start(st.n); $('miNew').blur(); };
+  $('miNew').onclick = () => { start(st.n, st.daily); $('miNew').blur(); };
+  $('miDaily').onclick = () => { start(st.n, true); $('miDaily').blur(); };
   $('miPrev').onclick = () => go(st.n - 1); $('miNext').onclick = () => go(st.n + 1);
   $('miFs').onclick = () => { $('miFs').blur(); try { if (document.fullscreenElement) document.exitFullscreen(); else $('miCanvas').parentElement.requestFullscreen?.().catch(() => {}); } catch {} };
   padKeys({ 3: 'h', 4: 'r' });
@@ -552,6 +558,7 @@ export default async function (ctx) {
     if (all.filter(s => s.includes('p')).length < 15) bad.push('pas assez de prismes');
     { const L = { w: 5, h: 3, ex: 0, ey: 1, ed: [1, 0], crystals: 2, g: [['', '', 'r', '', ''], ['', 'R', 'p', '', ''], ['', '', 'b', '', '']] };  // le prisme sépare, le filtre teint, le cristal bleu reste éteint au rouge
       const t = trace(L); if (t.segs.length !== 4 || !t.lit.has('2,0') || t.lit.has('2,2')) bad.push('prisme ou couleurs'); }
+    for (let k = 0; k < 60; k++) { const L = makeLevel2(50, 20261100 + k * 37); if (!L || trace(L).won || !trace(L, L.sol).won) { bad.push('niveau du jour ' + k); break; } }
     console.assert(!bad.length, 'miroirs', bad); view.dataset.selfcheck = bad.join(' | ') || 'ok';
     Object.keys(save).forEach(k => delete save[k]); Object.assign(save, JSON.parse(keepS)); mute = false;
   }

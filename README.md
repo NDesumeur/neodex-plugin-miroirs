@@ -4,6 +4,10 @@ Un casse-tête en pixel art : tourne les miroirs pour guider le laser jusqu’à
 
 *English version: [README.en.md](README.en.md)*
 
+## Niveau du jour (nouveau en 1.2.0)
+
+Un niveau avec prisme et cristaux de couleur, tiré d’après la date : le même pour tout le monde chaque jour, avec une série de jours (et son record). Les indices marchent aussi dessus ; après l’avoir fini, on revient à son niveau.
+
 ## Commandes
 
 - **Souris** : clique sur un miroir pour le tourner.

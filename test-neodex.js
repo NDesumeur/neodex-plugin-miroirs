@@ -25,6 +25,11 @@ module.exports = async ({ pj, sleep }) => {
   }
   const cols = await C('const s = Array.from({length: 40}, (_, i) => T.make(41 + i).sol.flat().join("")).join(""); return [..."RGBrgb"].map(k => s.split(k).length - 1).join(",");');
   if (cols.split(',').some(v => +v === 0)) throw new Error('les trois couleurs devaient servir (filtres R G B, cristaux r g b) : ' + cols);
+  // le niveau du jour : le même à chaque départ, avec prisme ; les indices le finissent
+  const dl = []; for (let k = 0; k < 2; k++) { await pj(`document.getElementById('miDaily').click(), 0`); await sleep(200); dl.push(await C('return st.daily + ":" + JSON.stringify(st.L.sol);')); }
+  if (dl[0] !== dl[1] || !dl[0].startsWith('true') || !dl[0].includes('"p"')) throw new Error('niveau du jour');
+  await sleep(200); await shot('niveau-du-jour');
+  await C('for (let i = 0; i < 60 && st.mode === "play"; i++) T.hint(); return 0;'); if (await C('return st.mode;') !== 'won') throw new Error('le niveau du jour devait se finir');
   await C(`T.start(${keepN}); return 0;`);
   const errs = await pj(`window.__e.join(' | ')`); if (errs) throw new Error('erreur : ' + errs);
   // plein écran, et la zone de jeu qui tient dans la fenêtre

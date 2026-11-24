@@ -4,6 +4,10 @@ A pixel-art puzzle: turn the mirrors to guide the laser to every crystal.
 
 *Version française : [README.md](README.md)*
 
+## Daily level (new in 1.2.0)
+
+A level with a prism and coloured crystals, picked from the date: the same for everyone each day, with a day streak (and its best). Hints work on it too; once it is done, you go back to your level.
+
 ## Controls
 
 - **Mouse**: click a mirror to turn it.
