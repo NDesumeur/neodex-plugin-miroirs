@@ -334,6 +334,9 @@ export default async function (ctx) {
   const W = 240, H = 136, T = 16, MAXL = 80, ADV = 41, PRISM = 45;
   const save = { level: 1, stars: {}, turns: 0, ...(await doc('records')) };
   const keep = () => folder.write('records', save).catch(() => {});
+  // les trophées de NeoDex (3.4.8 et plus) : succès et records déclarés dans plugin.json ; sur un NeoDex plus ancien, rien ne se passe
+  const trophy = id => { ctx.games?.unlock(id).catch(() => {}); };
+  const trophyRecord = (id, v) => { if (v != null && Number.isFinite(+v)) ctx.games?.record(id, +v).catch(() => {}); };
   // une cellule : '' vide, '#' mur, 'c' cristal (toutes couleurs), '/' ou '\\' miroir ; niveaux avancés : 'R' 'G' 'B' filtre, 'r' 'g' 'b' cristal de couleur, 'p' prisme
   const BEAM = { w: ['#ff5a9a', '#ffd0e4'], r: ['#ff2a2a', '#ffb0a0'], g: ['#2ae04a', '#c0ffb0'], b: ['#3a7aff', '#b8d8ff'] };
   const reflect = (m, [dx, dy]) => m === '/' ? [-dy, -dx] : [dy, dx];
@@ -522,6 +525,7 @@ export default async function (ctx) {
     if (st.tick % 15 === 0) g.canvas.setAttribute('aria-label', 'Miroirs, niveau ' + st.n + ' : ' + st.beam.lit.size + ' cristaux allumés sur ' + L.crystals + ', ' + st.turns + ' coups, case ' + (st.cur[0] + 1) + ', ' + (st.cur[1] + 1) + (st.mode === 'won' ? ', niveau fini' : '') + '.');
   }
   function info() {
+    setTimeout(miTrophies);
     const stars = Object.values(save.stars).reduce((a, b) => a + b, 0);
     $('miStats').replaceChildren(...[['Niveau atteint', save.level], ['Étoiles', stars + ' / ' + MAXL * 3], ['Miroirs tournés', save.turns], ['Niveau du jour', save.daily.last === day() ? 'fait ✓' : 'à faire'], ['Série de jours', (save.daily.last === day() || save.daily.last === day(1) ? save.daily.streak : 0) + ' (record ' + save.daily.best + ')']].flatMap(([a, c]) => [el('span', '', a), el('b', '', String(c))]));
   }
@@ -566,5 +570,12 @@ export default async function (ctx) {
   start(Math.min(save.level, MAXL));
   const STEP = 1000 / 60; let acc = 0, last = performance.now(), raf = 0;
   const frame = t => { if (!on()) { raf = 0; return; } raf = requestAnimationFrame(frame); acc += Math.min(200, t - last); last = t; while (acc >= STEP) { st.tick++; if (st.mode === 'won') st.dead++; acc -= STEP; } draw(); };
+  // les trophées, tirés des statistiques et des records gardés (aussi à l'ouverture : ce qui a été fait avant compte)
+  function miTrophies() {
+    const v = Object.values(save.stars), done = v.filter(Boolean).length, st = v.reduce((a, b) => a + b, 0), sig = [done, st, save.daily.best].join(); if (sig === miTrophies.sig) return; miTrophies.sig = sig;
+    trophyRecord('etoiles', st || null);
+    if (done >= 1) trophy('premier'); if (done >= 20) trophy('n20'); if (save.stars[PRISM]) trophy('prisme'); if (done >= MAXL) trophy('n80'); if (st >= MAXL * 3) trophy('etoiles');
+    if (save.daily.best >= 7) trophy('jour7');
+  }
   ctx.onOpen(() => { g ??= $('miCanvas').getContext('2d'); info(); last = performance.now(); if (!raf) raf = requestAnimationFrame(frame); });
 }

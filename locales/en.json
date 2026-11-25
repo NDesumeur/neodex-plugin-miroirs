@@ -85,5 +85,17 @@
  "fait ✓": "done ✓",
  "Série de jours": "Day streak",
  "record": "best",
- "Miroirs, un casse-tête en pixel art : tourne les miroirs pour guider le laser jusqu'à tous les cristaux. 80 niveaux construits à partir du trajet du laser, donc toujours faisables, avec des murs et des miroirs pièges ; à partir du niveau 41, des filtres de couleur, des cristaux de couleur et un prisme qui sépare le laser en deux. Laser lumineux avec étincelles sur les miroirs. Étoiles pour les niveaux faits en peu de coups, indices si tu bloques. Souris, clavier ou manette, plein écran. Un niveau du jour avec prisme, le même pour tous, et une série de jours.": "Mirrors, a pixel-art puzzle: turn the mirrors to guide the laser to every crystal. 80 levels built from the laser's path, so always solvable, with walls and decoy mirrors; from level 41, colour filters, coloured crystals and a prism that splits the laser in two. A bright laser with sparks on the mirrors. Stars for levels done in few moves, hints if you get stuck. Mouse, keyboard or gamepad, full screen. A daily level with a prism, the same for everyone, and a day streak."
+ "Miroirs, un casse-tête en pixel art : tourne les miroirs pour guider le laser jusqu'à tous les cristaux. 80 niveaux construits à partir du trajet du laser, donc toujours faisables, avec des murs et des miroirs pièges ; à partir du niveau 41, des filtres de couleur, des cristaux de couleur et un prisme qui sépare le laser en deux. Laser lumineux avec étincelles sur les miroirs. Étoiles pour les niveaux faits en peu de coups, indices si tu bloques. Souris, clavier ou manette, plein écran. Un niveau du jour avec prisme, le même pour tous, et une série de jours.": "Mirrors, a pixel-art puzzle: turn the mirrors to guide the laser to every crystal. 80 levels built from the laser's path, so always solvable, with walls and decoy mirrors; from level 41, colour filters, coloured crystals and a prism that splits the laser in two. A bright laser with sparks on the mirrors. Stars for levels done in few moves, hints if you get stuck. Mouse, keyboard or gamepad, full screen. A daily level with a prism, the same for everyone, and a day streak.",
+ "Premier rayon": "First beam",
+ "Finir un premier niveau": "Finish your first level",
+ "Jeux de lumière": "Light show",
+ "Finir 20 niveaux": "Finish 20 levels",
+ "Arc-en-ciel": "Rainbow",
+ "Finir le niveau 45, celui des prismes": "Finish level 45, the prism level",
+ "Maître des miroirs": "Master of mirrors",
+ "Finir les 80 niveaux": "Finish all 80 levels",
+ "Lumière parfaite": "Perfect light",
+ "Gagner 3 étoiles sur les 80 niveaux": "Earn 3 stars on all 80 levels",
+ "Une semaine de lumière": "A week of light",
+ "Finir le niveau du jour 7 jours de suite": "Finish the level of the day 7 days in a row"
 }

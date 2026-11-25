@@ -1,7 +1,7 @@
 {
   "id": "neodex.miroirs",
   "name": "Miroirs",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "author": "NDesumeur",
   "description": "Miroirs, un casse-tête en pixel art : tourne les miroirs pour guider le laser jusqu'à tous les cristaux. 80 niveaux construits à partir du trajet du laser, donc toujours faisables, avec des murs et des miroirs pièges ; à partir du niveau 41, des filtres de couleur, des cristaux de couleur et un prisme qui sépare le laser en deux. Laser lumineux avec étincelles sur les miroirs. Étoiles pour les niveaux faits en peu de coups, indices si tu bloques. Souris, clavier ou manette, plein écran. Un niveau du jour avec prisme, le même pour tous, et une série de jours.",
   "icon": "icon.png",
@@ -23,5 +23,46 @@
   "sdk": "2.1.0",
   "permissions": [
     "storage"
+  ],
+  "succes": [
+    {
+      "id": "premier",
+      "nom": "Premier rayon",
+      "texte": "Finir un premier niveau"
+    },
+    {
+      "id": "n20",
+      "nom": "Jeux de lumière",
+      "texte": "Finir 20 niveaux"
+    },
+    {
+      "id": "prisme",
+      "nom": "Arc-en-ciel",
+      "texte": "Finir le niveau 45, celui des prismes"
+    },
+    {
+      "id": "n80",
+      "nom": "Maître des miroirs",
+      "texte": "Finir les 80 niveaux"
+    },
+    {
+      "id": "etoiles",
+      "nom": "Lumière parfaite",
+      "texte": "Gagner 3 étoiles sur les 80 niveaux",
+      "cache": true
+    },
+    {
+      "id": "jour7",
+      "nom": "Une semaine de lumière",
+      "texte": "Finir le niveau du jour 7 jours de suite"
+    }
+  ],
+  "records": [
+    {
+      "id": "etoiles",
+      "nom": "Étoiles",
+      "sens": "haut",
+      "format": "nombre"
+    }
   ]
 }
